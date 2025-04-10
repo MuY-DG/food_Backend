@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.muybaby.food.mapper.CommentMapper">
+
+    <insert id="insertComment" parameterType="com.muybaby.food.bean.Comment" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO comments (user_id, dish_id, content, created_at)
+        VALUES (#{userId}, #{dishId}, #{content}, #{createdAt})
+    </insert>
+
+    <delete id="deleteComment" parameterType="java.lang.Long">
+        DELETE FROM comments WHERE comment_id = #{commentId}
+    </delete>
+
+    <select id="selectCommentById" parameterType="java.lang.Long" resultType="com.muybaby.food.bean.Comment">
+        SELECT comment_id, user_id, dish_id, content, created_at
+        FROM comments
+        WHERE comment_id = #{commentId}
+    </select>
+
+    <select id="selectCommentsByDishId" parameterType="java.lang.Long" resultType="com.muybaby.food.bean.Comment">
+        SELECT comment_id, user_id, dish_id, content, created_at
+        FROM comments
+        WHERE dish_id = #{dishId}
+    </select>
+
+</mapper>

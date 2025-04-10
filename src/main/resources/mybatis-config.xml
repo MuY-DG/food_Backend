@@ -4,17 +4,20 @@
         "https://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
 
-
     <settings>
-<!--        <setting name="logImpl" value="STDOUT_LOGGING"/>-->
-<!--        <setting name="logImpl" value="NO_LOGGING"/>-->
+        <!-- Logging is handled by SLF4J/Logback -->
         <setting name="logImpl" value="SLF4J"/>
         <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- Consider enabling second-level cache globally if appropriate -->
+        <!-- <setting name="cacheEnabled" value="true"/> -->
+        <!-- Consider enabling lazy loading if appropriate -->
+        <!-- <setting name="lazyLoadingEnabled" value="true"/> -->
+        <!-- <setting name="aggressiveLazyLoading" value="false"/> -->
     </settings>
 
     <typeAliases>
-        <!--        <typeAlias alias="example" type="com.example.model.example"/>-->
         <package name="com.muybaby.food.bean"/>
+        <package name="com.muybaby.food.dto"/> <!-- Scan DTOs as well if used in mappers -->
     </typeAliases>
-</configuration>
 
+</configuration>

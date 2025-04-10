@@ -3,6 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.muybaby.food.mapper.DishMapper">
+    <!-- Result Map including associations -->
     <resultMap id="dishResultMap" type="com.muybaby.food.bean.Dish">
         <id property="dishId" column="dish_id"/>
         <result property="title" column="title"/>
@@ -13,15 +14,55 @@
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="clicks" column="clicks"/>
+        <!-- Association for Category -->
         <association property="category" javaType="com.muybaby.food.dto.CategoryBasic">
             <id property="categoryId" column="category_id"/>
-            <result property="name" column="name"/>
+            <result property="name" column="category_name"/> <!-- Aliased category name -->
         </association>
+        <!-- Association for User -->
         <association property="user" javaType="com.muybaby.food.dto.UserBasic">
             <id property="userId" column="user_id"/>
             <result property="username" column="username"/>
         </association>
     </resultMap>
+
+    <!-- Basic Dish Result Map (without associations) -->
+    <resultMap id="dishBasicResultMap" type="com.muybaby.food.bean.Dish">
+        <id property="dishId" column="dish_id"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="markdownContent" column="markdown_content"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="clicks" column="clicks"/>
+    </resultMap>
+
+    <!-- SQL snippet for common dish columns -->
+    <sql id="dishColumns">
+        d.dish_id, d.title, d.category_id, d.user_id, d.markdown_content, 
+        d.cover_image, d.created_at, d.updated_at, d.clicks
+    </sql>
+
+    <!-- SQL snippet for joining with category and user -->
+    <sql id="dishJoins">
+        LEFT JOIN category c ON d.category_id = c.category_id
+        LEFT JOIN user u ON d.user_id = u.user_id
+    </sql>
+
+    <!-- SQL snippet for WHERE clause in pagination/search -->
+    <sql id="dishWhereClause">
+        <where>
+            <if test="title != null and title != ''">
+                <!-- Consider FULLTEXT search if available and needed -->
+                AND d.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND d.category_id = #{categoryId}
+            </if>
+        </where>
+    </sql>
 
     <insert id="insertDish" useGeneratedKeys="true" keyProperty="dishId">
         INSERT INTO dish (title, category_id, user_id, markdown_content, cover_image)
@@ -39,84 +80,82 @@
             user_id = #{userId},
             markdown_content = #{markdownContent},
             cover_image = #{coverImage}
+            /* Consider adding updated_at = NOW() */
         WHERE dish_id = #{dishId}
     </update>
+
     <update id="incrementClicks">
         UPDATE dish
         SET clicks = clicks + 1
         WHERE dish_id = #{dishId}
     </update>
 
+    <!-- Select all with associations -->
     <select id="selectAll" resultMap="dishResultMap">
         SELECT
-        d.dish_id,
-        d.user_id,
-        d.category_id,
-        d.cover_image,
-        d.title,
-        d.created_at,
-        d.updated_at,
-        d.clicks,
-        c.name,
+        <include refid="dishColumns"/>,
+        c.name AS category_name, <!-- Aliased column -->
         u.username
         FROM dish d
-        LEFT JOIN category c ON d.category_id = c.category_id
-        LEFT JOIN user u ON d.user_id = u.user_id
+        <include refid="dishJoins"/>
+        ORDER BY d.created_at DESC /* Added default ordering */
     </select>
 
+    <!-- Select by ID with associations -->
     <select id="selectById" resultMap="dishResultMap">
-        SELECT d.*,c.name , u.username
+        SELECT 
+        <include refid="dishColumns"/>,
+        c.name AS category_name, <!-- Aliased column -->
+        u.username
         FROM dish d
-        LEFT JOIN category c ON d.category_id = c.category_id
-        LEFT JOIN user u on d.user_id = u.user_id
+        <include refid="dishJoins"/>
         WHERE d.dish_id = #{dishId}
     </select>
 
+    <!-- Optimized existence check -->
     <select id="existsByTitle" resultType="boolean">
-        SELECT COUNT(1) FROM dish WHERE title = #{title}
+        SELECT 1 FROM dish WHERE title = #{title} LIMIT 1
     </select>
 
+    <!-- Optimized existence check -->
     <select id="existsByTitleAndNotId" resultType="boolean">
-        SELECT COUNT(*) FROM dish WHERE title = #{title} AND dish_id != #{dishId}
+        SELECT 1 FROM dish WHERE title = #{title} AND dish_id != #{dishId} LIMIT 1
     </select>
 
-
-
-
+    <!-- Select paginated list with associations and filtering -->
     <select id="selectByPage" resultMap="dishResultMap">
         SELECT
-        d.dish_id,
-        d.user_id,
-        d.category_id,
-        d.cover_image,
-        d.title,
-        d.created_at,
-        d.updated_at,
-        d.clicks,
-        c.name,
+        <include refid="dishColumns"/>,
+        c.name AS category_name, <!-- Aliased column -->
         u.username
         FROM dish d
-        LEFT JOIN category c ON d.category_id = c.category_id
-        LEFT JOIN user u ON d.user_id = u.user_id
-        <where>
-            <if test="title != null and title != ''">
-                AND d.title LIKE CONCAT('%', #{title}, '%')
-            </if>
-            <if test="categoryId != null">
-                AND d.category_id = #{categoryId}
-            </if>
-        </where>
+        <include refid="dishJoins"/>
+        <include refid="dishWhereClause"/>
+        ORDER BY d.created_at DESC /* Or other desired order */
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
-    <select id="count" resultType="java.lang.Long">
+    <!-- Count total dishes (no filter) -->
+    <select id="count" resultType="long">
         SELECT COUNT(*) FROM dish
     </select>
-    <select id="getHotDishes" resultMap="dishResultMap">
-        SELECT d.dish_id, d.user_id, d.category_id, d.cover_image, d.title, d.created_at, d.updated_at, d.clicks, c.name, u.username
+
+    <!-- Count dishes matching criteria -->
+    <select id="countByCriteria" resultType="long">
+        SELECT COUNT(*)
         FROM dish d
-        LEFT JOIN category c ON d.category_id = c.category_id
-        LEFT JOIN user u ON d.user_id = u.user_id
+        <include refid="dishJoins"/> <!-- Optional: include joins only if needed for WHERE -->
+        <include refid="dishWhereClause"/>
+    </select>
+
+    <!-- Get Hot Dishes (Top 12 by clicks) with associations -->
+    <select id="getHotDishes" resultMap="dishResultMap">
+        SELECT 
+        <include refid="dishColumns"/>,
+        c.name AS category_name, <!-- Aliased column -->
+        u.username
+        FROM dish d
+        <include refid="dishJoins"/>
         ORDER BY clicks DESC
         LIMIT 12
     </select>

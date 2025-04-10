@@ -142,4 +142,27 @@ public class UserController {
         );
         return Result.success("登录成功", tokenDTO);
     }
+    @Autowired
+    private FavoriteService favoriteService;
+
+    @PostMapping("/favorites")
+    public Result addFavorite(@RequestParam Long dishId) {
+        Long userId = ThreadLocalUtil.getCurrentUser().getUserId();
+        favoriteService.insertFavorite(new Favorite(null, userId, dishId));
+        return Result.success("已添加到收藏");
+    }
+
+    @DeleteMapping("/favorites")
+    public Result removeFavorite(@RequestParam Long dishId) {
+        Long userId = ThreadLocalUtil.getCurrentUser().getUserId();
+        favoriteService.deleteFavorite(userId, dishId);
+        return Result.success("已取消收藏");
+    }
+
+    @GetMapping("/favorites")
+    public Result<List<Dish>> getFavorites() {
+        Long userId = ThreadLocalUtil.getCurrentUser().getUserId();
+        List<Dish> favorites = favoriteService.getFavoritesByUserId(userId);
+        return Result.success(favorites);
+    }
 }

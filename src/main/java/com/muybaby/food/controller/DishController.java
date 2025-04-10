@@ -62,5 +62,27 @@ public class DishController {
         Page<Dish> userPage = dishService.getDishSByPage(pageable, title, categoryId);
         return Result.success(userPage);
     }
+
+    @Autowired
+    private CommentService commentService;
+
+    @PostMapping("/{dishId}/comments")
+    public Result addComment(@PathVariable Long dishId, @RequestParam String content) {
+        Long userId = ThreadLocalUtil.getCurrentUser().getUserId();
+        commentService.insertComment(new Comment(null, userId, dishId, content, LocalDateTime.now().toString()));
+        return Result.success("评论已添加");
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public Result removeComment(@PathVariable Long commentId) {
+        commentService.deleteComment(commentId);
+        return Result.success("评论已删除");
+    }
+
+    @GetMapping("/{dishId}/comments")
+    public Result<List<Comment>> getComments(@PathVariable Long dishId) {
+        List<Comment> comments = commentService.getCommentsByDishId(dishId);
+        return Result.success(comments);
+    }
 }
 

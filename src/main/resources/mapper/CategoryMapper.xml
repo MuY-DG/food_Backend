@@ -3,12 +3,14 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.muybaby.food.mapper.CategoryMapper">
+    <!-- Result Map remains the same -->
     <resultMap id="category" type="com.muybaby.food.bean.Category">
         <id property="categoryId" column="category_id"/>
         <result property="name" column="name"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
+    
     <insert id="insertCategory" useGeneratedKeys="true" keyProperty="categoryId">
         INSERT INTO category (name)
         VALUES (#{name})
@@ -21,31 +23,43 @@
 
     <update id="updateCategory">
         UPDATE category
-        SET name = #{name}
+        SET name = #{name} 
+        /* Consider adding updated_at = NOW() if the column should be automatically updated */
         WHERE category_id = #{categoryId}
     </update>
 
-    <select id="selectAll" resultType="Category">
+    <select id="selectAll" resultType="com.muybaby.food.bean.Category">
         SELECT category_id, name, created_at, updated_at
         FROM category
+        ORDER BY category_id /* Added default ordering */
     </select>
 
-    <select id="selectById" resultType="Category">
+    <select id="selectById" resultType="com.muybaby.food.bean.Category">
         SELECT category_id, name, created_at, updated_at
         FROM category
         WHERE category_id = #{id}
     </select>
 
+    <!-- Optimized existence check -->
     <select id="existsByName" resultType="boolean">
-        SELECT COUNT(1)
+        SELECT 1
         FROM category
         WHERE name = #{name}
+        LIMIT 1
     </select>
 
+    <!-- Optimized existence check -->
     <select id="existsByNameAndNotId" resultType="boolean">
-        SELECT COUNT(*) FROM category WHERE name = #{name} AND category_id != #{categoryId}
+        SELECT 1 
+        FROM category 
+        WHERE name = #{name} AND category_id != #{categoryId}
+        LIMIT 1
     </select>
+    
+    <!-- Removed selectIdIfExists as it's redundant -->
+    <!-- 
     <select id="selectIdIfExists" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM category WHERE category_id = #{categoryId})
-    </select>
+    </select> 
+    -->
 </mapper>

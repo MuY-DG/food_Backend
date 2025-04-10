@@ -20,28 +20,42 @@
         </encoder>
     </appender>
 
-    <!-- 根记录器 -->
-    <root level="DEBUG">
+    <!-- 根记录器 (设置为INFO)-->
+    <root level="INFO">
+        <!-- Remove CONSOLE appender for production if desired -->
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </root>
 
 
     <!-- 特定包的记录器 -->
-<!--    <logger name="org.springframework.jdbc" level="DEBUG"/>-->
-    <logger name="com.muybaby.food" level="DEBUG" additivity="false">
+    <!-- Set application log level to INFO for production -->
+    <logger name="com.muybaby.food" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </logger>
 
-    <!-- 限制 Spring 框架日志级别为 WARN，避免过多调试信息 -->
+    <!-- Keep Spring framework logging at WARN -->
     <logger name="org.springframework" level="WARN" additivity="false">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE" /> <!-- Log Spring WARN/ERROR to file as well -->
     </logger>
 
-    <!-- 单独配置 MyBatis SQL 日志 -->
-    <logger name="org.mybatis" level="DEBUG" additivity="false">
+    <!-- Set MyBatis SQL logging to INFO for production (DEBUG for development/tuning) -->
+    <logger name="org.mybatis" level="INFO" additivity="false">
         <appender-ref ref="FILE"/>
         <appender-ref ref="CONSOLE"/>
     </logger>
+
+    <!-- Suggestion: Consider using AsyncAppender for high-volume logging -->
+    <!--
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="ASYNC_FILE" />
+    </root>
+    -->
+
 </configuration>

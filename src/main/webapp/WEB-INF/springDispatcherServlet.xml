@@ -4,54 +4,82 @@
        xmlns:mvc="http://www.springframework.org/schema/mvc"
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
-    <mvc:annotation-driven/>
+    
+    <!-- Enables annotation-driven controllers, message converters, etc. -->
+    <!-- NOTE: The second <mvc:annotation-driven> block below overrides this one if message-converters are specified -->
+    <!-- <mvc:annotation-driven/> -->
 
+    <!-- Enables the default servlet for handling static resources not mapped by DispatcherServlet -->
     <mvc:default-servlet-handler/>
 
-    <!-- 扫描主包中的控制器 -->
+    <!-- Scan for controllers in the specified package -->
     <context:component-scan base-package="com.muybaby.food.controller"/>
 
-
+    <!-- CORS Configuration: IMPORTANT - Replace '*' with specific allowed origins in production -->
     <mvc:cors>
-        <mvc:mapping path="/**"
-                     allowed-origins="*"
+        <mvc:mapping path="/api/**" 
+                     allowed-origins="http://localhost:8080,https://your-frontend-domain.com" <!-- Replace with actual frontend origins -->
                      allowed-methods="GET, POST, PUT, DELETE, OPTIONS"
                      allowed-headers="*"
-                     allow-credentials="false"
+                     allow-credentials="true" <!-- Set to true if frontend needs to send cookies/auth headers -->
                      max-age="3600"/>
     </mvc:cors>
 
+    <!-- Interceptor Configuration -->
     <mvc:interceptors>
         <mvc:interceptor>
             <mvc:mapping path="/api/**"/>
+            <!-- Exclude public endpoints -->
             <mvc:exclude-mapping path="/api/user/login"/>
             <mvc:exclude-mapping path="/api/user/register"/>
             <mvc:exclude-mapping path="/api/user/code"/>
-<!--            <mvc:exclude-mapping path="/api/admin/category"/>-->
+            <!-- Add other exclusions as needed -->
+            <!-- <mvc:exclude-mapping path="/api/dish/search"/> --> 
+            <!-- <mvc:exclude-mapping path="/api/dish/{dishId}"/> -->
             <bean class="com.muybaby.food.interceptor.LoginInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>
 
-    <mvc:resources mapping="/uploads/**" location="file:///D:/project-NEW/Java/Food/uploads/" />
+    <!-- Resource Handling: Use relative path or system property -->
+    <!-- Option 1: Relative to webapp root (if uploads dir is inside) -->
+    <!-- <mvc:resources mapping="/uploads/**" location="/uploads/"/> -->
+    <!-- Option 2: Using system property (needs configuration) -->
+    <!-- <mvc:resources mapping="/uploads/**" location="file:${user.home}/app-uploads/" /> -->
+    <!-- Option 3: Using the path from upload.properties (requires PropertySourcesPlaceholderConfigurer) -->
+     <mvc:resources mapping="/uploads/**" location="file:${file.upload-dir}" />
 
+    <!-- Annotation-driven configuration with custom message converters -->
     <mvc:annotation-driven>
         <mvc:message-converters>
+            <!-- String converter (handles text/plain, text/html) -->
             <bean class="org.springframework.http.converter.StringHttpMessageConverter">
                 <property name="defaultCharset" value="UTF-8"/>
                 <property name="supportedMediaTypes">
                     <list>
                         <value>text/plain;charset=UTF-8</value>
                         <value>text/html;charset=UTF-8</value>
-                        <value>application/json;charset=UTF-8</value>
+                        <!-- Removed application/json as Jackson handles it -->
                     </list>
                 </property>
             </bean>
+            <!-- Jackson JSON converter (handles application/json) -->
             <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
-                <property name="supportedMediaTypes">
+                 <property name="supportedMediaTypes">
                     <list>
                         <value>application/json;charset=UTF-8</value>
+                         <!-- Add other JSON types if needed, e.g., application/*+json -->
                     </list>
                 </property>
+                <!-- Optional: Configure ObjectMapper properties here if needed -->
+                <!-- 
+                <property name="objectMapper">
+                    <bean class="com.fasterxml.jackson.databind.ObjectMapper">
+                         Enable/disable features, register modules, etc.
+                         <property name="serializationInclusion" value="NON_NULL"/>
+                         <property name="failOnUnknownProperties" value="false"/>
+                    </bean>
+                </property>
+                 -->
             </bean>
         </mvc:message-converters>
     </mvc:annotation-driven>

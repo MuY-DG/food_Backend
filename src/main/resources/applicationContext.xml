@@ -8,61 +8,76 @@
                            http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
                            http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd
                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
-    <!-- 扫描com.muybaby.food包下的组件，排除@Controller注解的类 -->
+
+    <!-- Scan components (services, mappers, etc.), excluding controllers -->
     <context:component-scan base-package="com.muybaby.food">
         <context:exclude-filter type="annotation"
                                 expression="org.springframework.stereotype.Controller"/>
     </context:component-scan>
 
-    <context:property-placeholder location="classpath:jdbc.properties, classpath:upload.properties" ignore-resource-not-found="true" ignore-unresolvable="true"/>
-    <!-- 加载jdbc.properties属性文件 -->
-<!--    <context:property-placeholder location="classpath:jdbc.properties" ignore-resource-not-found="true" ignore-unresolvable="true"/>-->
-    <!-- 配置Druid数据源 -->
-    <bean class="com.alibaba.druid.pool.DruidDataSource" id="poolDataSource" destroy-method="close">
+    <!-- Enable annotation-based transaction management -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!-- Load properties files. Consider making 'ignore-*' false in production to catch missing files/properties -->
+    <context:property-placeholder location="classpath:jdbc.properties, classpath:upload.properties" ignore-resource-not-found="false" ignore-unresolvable="false"/>
+    
+    <!-- Configure Druid DataSource with enhanced properties -->
+    <bean class="com.alibaba.druid.pool.DruidDataSource" id="poolDataSource" init-method="init" destroy-method="close">
         <property name="driverClassName" value="${jdbc.driverClassName}"/>
         <property name="url" value="${jdbc.url}"/>
         <property name="username" value="${jdbc.username}"/>
         <property name="password" value="${jdbc.password}"/>
-        <!-- 添加连接池监控参数 -->
-        <property name="initialSize" value="5"/>
-        <property name="minIdle" value="5"/>
-        <property name="maxActive" value="20"/>
-        <property name="validationQuery" value="SELECT 1"/>
+        
+        <!-- Basic Pool Settings - Tune these based on load testing -->
+        <property name="initialSize" value="5"/> <!-- Initial connections -->
+        <property name="minIdle" value="5"/>   <!-- Minimum idle connections -->
+        <property name="maxActive" value="20"/>  <!-- Maximum active connections (tune carefully) -->
+        <property name="maxWait" value="60000"/> <!-- Max wait time for connection (ms) -->
+
+        <!-- Connection Validation/Eviction Settings -->
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/> <!-- Check interval (ms) -->
+        <property name="minEvictableIdleTimeMillis" value="300000"/> <!-- Min idle time before eviction (ms) -->
+        <property name="validationQuery" value="SELECT 1"/> <!-- Query to validate connections -->
+        <property name="testWhileIdle" value="true"/>
+        <property name="testOnBorrow" value="false"/> <!-- Avoid testing on borrow if testWhileIdle is true -->
+        <property name="testOnReturn" value="false"/>
+
+        <!-- Prevent connection leaks -->
+        <property name="removeAbandoned" value="true"/>
+        <property name="removeAbandonedTimeout" value="1800"/> <!-- Timeout in seconds (30 mins) -->
+        <property name="logAbandoned" value="true"/> <!-- Log abandoned connections -->
+
+        <!-- Optional: Configure Druid filters (e.g., for monitoring, SQL injection defense) -->
+        <!-- 
+        <property name="filters" value="stat,wall,log4j2" /> 
+        <property name="connectionProperties" value="druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000" />
+        -->
     </bean>
 
-    <!-- 配置MyBatis的SqlSessionFactory -->
+    <!-- Configure MyBatis SqlSessionFactory -->
     <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactoryBean">
         <property name="configLocation" value="classpath:mybatis-config.xml"/>
         <property name="dataSource" ref="poolDataSource"/>
-        <property name="mapperLocations" value="classpath:mapper/**.xml"/>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/> <!-- Changed from /**.xml -->
+        <!-- Optional: Define type aliases package here instead of mybatis-config.xml -->
+        <!-- <property name="typeAliasesPackage" value="com.muybaby.food.bean, com.muybaby.food.dto"/> -->
     </bean>
 
-    <!-- 配置Mapper接口扫描器 -->
+    <!-- Configure MapperScannerConfigurer -->
     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer" id="mapperScannerConfigurer">
         <property name="basePackage" value="com.muybaby.food.mapper"/>
         <property name="sqlSessionFactoryBeanName" value="sqlSessionFactoryBean"/>
     </bean>
 
-    <!-- 配置Spring的事务管理器 -->
+    <!-- Configure Spring TransactionManager -->
     <bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" id="transactionManager">
         <property name="dataSource" ref="poolDataSource"/>
     </bean>
 
-
-
-    <!--     配置事务通知，定义事务传播行为 -->
-    <tx:advice id="txAdvice" transaction-manager="transactionManager">
-        <tx:attributes>
-            <tx:method name="add*" propagation="REQUIRED"/>
-            <tx:method name="update*" propagation="REQUIRED"/>
-        </tx:attributes>
-    </tx:advice>
-
-    <!--     AOP切面配置，定义事务切入点 -->
-    <aop:config>
-        <aop:pointcut id="serviceMethods"
-                      expression="execution(* com.muybaby.food.service.*.*(..))"/>
-        <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethods"/>
-    </aop:config>
+    <!-- AOP configuration for transactions is REMOVED. Use @Transactional annotations on service methods instead. -->
+    <!-- 
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">...</tx:advice>
+    <aop:config>...</aop:config> 
+    -->
 
 </beans>

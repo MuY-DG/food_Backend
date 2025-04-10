@@ -9,8 +9,6 @@ import java.util.List;
  * @author MuYbaby
  * @create 2025/3/12
  */
-
-
 @Mapper
 public interface CategoryMapper {
     int insertCategory(Category category);
@@ -20,5 +18,5 @@ public interface CategoryMapper {
     Category selectById(Integer id);
     boolean existsByName(String name);
     boolean existsByNameAndNotId(Category category);
-    boolean selectIdIfExists(Integer categoryId);
+    // Removed redundant selectIdIfExists method
 }
