@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.muybaby.food.mapper.UserMapper">
+    <insert id="insertUser">
+        INSERT INTO user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            username,
+            password_hash,
+            <if test="email != null">email,</if>
+            <if test="phone != null">phone,</if>
+            <if test="role != null">role,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="updatedAt != null">updated_at,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{username},
+            #{passwordHash},
+            <if test="email != null">#{email},</if>
+            <if test="phone != null">#{phone},</if>
+            <if test="role != null">#{role},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="updatedAt != null">#{updatedAt},</if>
+        </trim>
+    </insert>
+
+    <select id="selectUser" resultType="com.muybaby.food.bean.User">
+        select * from user where user_id = #{user_id}
+    </select>
+    <select id="selectUserByName" resultType="com.muybaby.food.bean.User">
+        select user_id, username, password_hash, email, phone, role, created_at, updated_at
+        from user
+        where username = #{username}
+    </select>
+    <select id="selectUserByEmail" resultType="com.muybaby.food.bean.User">
+        select user_id, username, password_hash, email, phone, role, created_at, updated_at
+        from user
+        where email = #{email}
+    </select>
+    <select id="selectByPage" resultType="com.muybaby.food.dto.UserDto">
+        SELECT * FROM user
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM user
+    </select>
+    <select id="existsById" resultType="java.lang.Boolean">
+        SELECT EXISTS(SELECT 1 FROM user WHERE user_id = #{userId})
+    </select>
+</mapper>

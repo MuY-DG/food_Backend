@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.muybaby.food.mapper.CategoryMapper">
+    <resultMap id="category" type="com.muybaby.food.bean.Category">
+        <id property="categoryId" column="category_id"/>
+        <result property="name" column="name"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    <insert id="insertCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        INSERT INTO category (name)
+        VALUES (#{name})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM category
+        WHERE category_id = #{categoryId}
+    </delete>
+
+    <update id="updateCategory">
+        UPDATE category
+        SET name = #{name}
+        WHERE category_id = #{categoryId}
+    </update>
+
+    <select id="selectAll" resultType="Category">
+        SELECT category_id, name, created_at, updated_at
+        FROM category
+    </select>
+
+    <select id="selectById" resultType="Category">
+        SELECT category_id, name, created_at, updated_at
+        FROM category
+        WHERE category_id = #{id}
+    </select>
+
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(1)
+        FROM category
+        WHERE name = #{name}
+    </select>
+
+    <select id="existsByNameAndNotId" resultType="boolean">
+        SELECT COUNT(*) FROM category WHERE name = #{name} AND category_id != #{categoryId}
+    </select>
+    <select id="selectIdIfExists" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM category WHERE category_id = #{categoryId})
+    </select>
+</mapper>

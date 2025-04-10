@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.muybaby.food.mapper.DishMapper">
+    <resultMap id="dishResultMap" type="com.muybaby.food.bean.Dish">
+        <id property="dishId" column="dish_id"/>
+        <result property="title" column="title"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="markdownContent" column="markdown_content"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="clicks" column="clicks"/>
+        <association property="category" javaType="com.muybaby.food.dto.CategoryBasic">
+            <id property="categoryId" column="category_id"/>
+            <result property="name" column="name"/>
+        </association>
+        <association property="user" javaType="com.muybaby.food.dto.UserBasic">
+            <id property="userId" column="user_id"/>
+            <result property="username" column="username"/>
+        </association>
+    </resultMap>
+
+    <insert id="insertDish" useGeneratedKeys="true" keyProperty="dishId">
+        INSERT INTO dish (title, category_id, user_id, markdown_content, cover_image)
+        VALUES (#{title}, #{categoryId}, #{userId}, #{markdownContent}, #{coverImage})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM dish WHERE dish_id = #{dishId}
+    </delete>
+
+    <update id="updateDish">
+        UPDATE dish
+        SET title = #{title},
+            category_id = #{categoryId},
+            user_id = #{userId},
+            markdown_content = #{markdownContent},
+            cover_image = #{coverImage}
+        WHERE dish_id = #{dishId}
+    </update>
+    <update id="incrementClicks">
+        UPDATE dish
+        SET clicks = clicks + 1
+        WHERE dish_id = #{dishId}
+    </update>
+
+    <select id="selectAll" resultMap="dishResultMap">
+        SELECT
+        d.dish_id,
+        d.user_id,
+        d.category_id,
+        d.cover_image,
+        d.title,
+        d.created_at,
+        d.updated_at,
+        d.clicks,
+        c.name,
+        u.username
+        FROM dish d
+        LEFT JOIN category c ON d.category_id = c.category_id
+        LEFT JOIN user u ON d.user_id = u.user_id
+    </select>
+
+    <select id="selectById" resultMap="dishResultMap">
+        SELECT d.*,c.name , u.username
+        FROM dish d
+        LEFT JOIN category c ON d.category_id = c.category_id
+        LEFT JOIN user u on d.user_id = u.user_id
+        WHERE d.dish_id = #{dishId}
+    </select>
+
+    <select id="existsByTitle" resultType="boolean">
+        SELECT COUNT(1) FROM dish WHERE title = #{title}
+    </select>
+
+    <select id="existsByTitleAndNotId" resultType="boolean">
+        SELECT COUNT(*) FROM dish WHERE title = #{title} AND dish_id != #{dishId}
+    </select>
+
+
+
+
+    <select id="selectByPage" resultMap="dishResultMap">
+        SELECT
+        d.dish_id,
+        d.user_id,
+        d.category_id,
+        d.cover_image,
+        d.title,
+        d.created_at,
+        d.updated_at,
+        d.clicks,
+        c.name,
+        u.username
+        FROM dish d
+        LEFT JOIN category c ON d.category_id = c.category_id
+        LEFT JOIN user u ON d.user_id = u.user_id
+        <where>
+            <if test="title != null and title != ''">
+                AND d.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND d.category_id = #{categoryId}
+            </if>
+        </where>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM dish
+    </select>
+    <select id="getHotDishes" resultMap="dishResultMap">
+        SELECT d.dish_id, d.user_id, d.category_id, d.cover_image, d.title, d.created_at, d.updated_at, d.clicks, c.name, u.username
+        FROM dish d
+        LEFT JOIN category c ON d.category_id = c.category_id
+        LEFT JOIN user u ON d.user_id = u.user_id
+        ORDER BY clicks DESC
+        LIMIT 12
+    </select>
+
+</mapper>
